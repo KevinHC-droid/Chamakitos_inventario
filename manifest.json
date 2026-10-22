@@ -1,0 +1,16 @@
+{
+  "background_color": "#ffffff",
+  "dir": "ltr",
+  "display": "standalone",
+  "name": "Inventario Innovarte",
+  "orientation": "any",
+  "scope": "/",
+  "short_name": "Innovarte Inventario",
+  "start_url": "/",
+  "theme_color": "#ffffff",
+  "id": "012931323332345678234",
+  "description": "Inventario Para Tiendas de Innovarte",
+  "categories": [
+    "productivity"
+  ]
+}
