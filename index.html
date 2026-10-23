@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
- <link rel="manifest" href="manifest.json">
-<title>Inventario Chamakito</title>
+<title>Inventario de tienda</title>
+<link rel="manifest" href="manifest.json">
 </head>
 <style>
 :root{--bg:#f6f5f2;--card:#fff;--tx:#1d1d1b;--mut:#6b6a66;--bd:#e3e1db;--ac:#1f6f5c;--on:#fff;--in:#1f7a46;--out:#b3402f;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -12,19 +12,24 @@
 html,body{height:100%;margin:0}
 body{background:var(--bg);color:var(--tx);font:16px/1.35 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:10}
-header{position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);z-index:5;padding:12px 14px 8px;border-bottom:1px solid var(--bd)}
-h1{font-size:19px;margin:0 0 8px;letter-spacing:.04em}
+header{position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);z-index:5;padding:10px 14px 8px;border-bottom:1px solid var(--bd)}
+.brand{display:flex;gap:10px;align-items:center;margin-bottom:8px}
+.logo{width:46px;height:46px;border-radius:10px;flex:none}
+#shop{font-size:19px;font-weight:700;letter-spacing:.03em;border:0;border-bottom:1.5px dashed var(--bd);border-radius:0;background:transparent;padding:6px 2px}
 .dates{display:flex;gap:8px}
 .dates label{flex:1;font-size:12px;color:var(--mut)}
-input{width:100%;font:inherit;font-size:16px;padding:9px 10px;border:1px solid var(--bd);border-radius:10px;background:var(--card);color:var(--tx)}
+input,textarea{width:100%;font:inherit;font-size:16px;padding:9px 10px;border:1px solid var(--bd);border-radius:10px;background:var(--card);color:var(--tx)}
 .dates input{padding:6px 8px}
-#q{margin-top:8px}
-.tot{display:flex;justify-content:space-between;align-items:baseline;padding:10px 14px;font-size:14px;color:var(--mut)}
-.tot b{font-size:20px;color:var(--tx)}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding:8px 0 2px}
+.tab{flex:none;padding:7px 13px;border-radius:18px;border:1px solid var(--bd);background:var(--card);color:var(--tx);font-size:14px}
+.tab.on{background:var(--ac);color:var(--on);border-color:var(--ac);font-weight:600}
+#q{margin-top:6px}
+.tot{display:flex;justify-content:space-between;align-items:baseline;padding:10px 14px;font-size:13px;color:var(--mut)}
+.tot b{font-size:19px;color:var(--tx)}
 main{padding:0 12px 110px}
 .it{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:10px 12px;margin-bottom:8px}
 .top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
-.nm{font-weight:600;background:none;border:0;color:var(--tx);font:inherit;font-weight:600;text-align:left;padding:0}
+.nm{background:none;border:0;color:var(--tx);font:inherit;font-weight:600;text-align:left;padding:0}
 .sub{font-size:12.5px;color:var(--mut);margin-top:2px}
 .ex{font-size:26px;font-weight:700;text-align:right;line-height:1}
 .ex small{display:block;font-size:11px;font-weight:400;color:var(--mut)}
@@ -49,139 +54,8 @@ button{font:inherit;cursor:pointer}
 .hint{font-size:12.5px;color:var(--mut);margin:4px 0 10px}
 #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(86px + env(safe-area-inset-bottom,0px));background:var(--tx);color:var(--bg);padding:9px 14px;border-radius:20px;font-size:14px;z-index:30;display:none;max-width:90%;text-align:center}
 .empty{text-align:center;color:var(--mut);padding:30px 0}
+textarea{font-size:13px;resize:none}
 </style></head>
 <body>
 <header>
-<h1>CHAMAKITO · Inventario</h1>
-<div class="dates">
-<label>Semana<input data-h="semana" inputmode="numeric"></label>
-<label>Día<input data-h="dia" inputmode="numeric"></label>
-<label>Mes<input data-h="mes" inputmode="numeric"></label>
-</div>
-<input id="q" type="search" placeholder="Buscar mercancía…">
-</header>
-<div class="tot"><span>Total del día (ventas)</span><b id="tot">0</b></div>
-<main id="list"></main>
-<div class="bar">
-<button class="pri" data-act="new">+ Artículo</button>
-<button class="sec" data-act="export">Excel</button>
-<button class="sec" data-act="menu">Más</button>
-</div>
-<div class="ov" id="ov"><div class="pn" id="pn"></div></div>
-<div id="toast"></div>
-<input type="file" id="file" accept=".xlsx,.xls" hidden>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
-<script>
-const KEY='chamakito_inv_v1';
-const SEED=[["Pulóver niña 0-3",13,300],["Pulóver niña 4-12",74,600],["Vest 0-3",32,800],["Vest 4-12",82,1000],["Moño V 0-3",4,800],["Moño V 4-12",24,1000],["Saya 0-3",2,400],["Saya 4-12",16,500],["Licra I 0-3",2,200],["Licra I 4-12",8,600],["Pul niño 0-3",16,300],["Pul niño 4-12",20,600],["Camisa 0-3",8,300],["Camisa 4-12",11,400],["Short 0-3",2,400],["Short 4-12",50,1000],["Pant 0-3",4,800],["Pant 4-12",34,1500],["Eng 0-3",14,300],["Eng 4-12",62,600],["Abrig 0-3",29,1000],["Abrig 4-12",24,1500],["Moño d 0-3",0,800],["Moño d 4-12",3,1500],["Moño 55",139,250],["A playa",30,300],["Chaleco",5,300],["Tacasillo",1,150],["Blumer",11,150],["Media",61,100],["Gorro",9,100],["Toalla",2,50],["Babero",20,50],["Pachanga",11,200],["Guantes",8,100],["Licra set",1,800],["Gorra",0,200],["Licra c 0-3",0,150],["Licra c 4-12",3,450],["Camiseta 0-3",0,250],["Camiseta 4-12",2,450]];
-function wk(d){const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));t.setUTCDate(t.getUTCDate()+4-(t.getUTCDay()||7));const y=new Date(Date.UTC(t.getUTCFullYear(),0,1));return Math.ceil(((t-y)/864e5+1)/7)}
-let uid=1;const mk=(n,i,p)=>({id:'a'+(uid++)+Date.now().toString(36),n,i,e:0,s:0,f:null,p});
-function fresh(){const d=new Date();return{semana:wk(d),dia:d.getDate(),mes:d.getMonth()+1,items:SEED.map(x=>mk(x[0],x[1],x[2])),c:{transf:'',efec:'',usd:'',t1:'',t2:'',t3:'',t4:''}}}
-function load(){try{const r=localStorage.getItem(KEY);if(r){const o=JSON.parse(r);if(o&&o.items)return o}}catch(e){}return fresh()}
-let S=load();
-function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
-const $=s=>document.querySelector(s);
-const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const num=v=>{const n=parseFloat(String(v).replace(',','.'));return isNaN(n)?0:n};
-const fmt=n=>Number(n).toLocaleString('es');
-function calc(it){const ex=it.i+it.e-it.s;const fin=it.f==null?ex:it.f;return{ex,fin,ven:ex-fin,imp:(ex-fin)*it.p}}
-function toast(m){const t=$('#toast');t.textContent=m;t.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>t.style.display='none',2600)}
-function render(){
- const q=$('#q').value.trim().toLowerCase();let total=0,h='';
- S.items.forEach(it=>{const c=calc(it);total+=c.imp;if(q&&!it.n.toLowerCase().includes(q))return;
- h+=`<div class="it"><div class="top"><div><button class="nm" data-act="edit" data-id="${it.id}">${esc(it.n)}</button><div class="sub">Inicio ${it.i} · Entrada ${it.e} · Salida ${it.s} · Precio ${fmt(it.p)}${c.ven?` · Venta ${c.ven} (${fmt(c.imp)})`:''}</div></div><div class="ex">${c.fin}<small>existencia</small></div></div><div class="btns"><button class="b in" data-act="ent" data-id="${it.id}">+ Entrada</button><button class="b out" data-act="sal" data-id="${it.id}">− Salida</button></div></div>`});
- $('#list').innerHTML=h||'<div class="empty">No hay artículos. Toca «+ Artículo».</div>';
- $('#tot').textContent=fmt(total);
- document.querySelectorAll('[data-h]').forEach(i=>{if(document.activeElement!==i)i.value=S[i.dataset.h]});
-}
-const ov=$('#ov'),pn=$('#pn');
-function open(h){pn.innerHTML=h;ov.classList.add('on');const i=pn.querySelector('input');if(i&&i.dataset.focus)setTimeout(()=>{i.focus();i.select()},50)}
-function close(){ov.classList.remove('on')}
-const find=id=>S.items.find(x=>x.id===id);
-let cur=null,armed='';
-function mov(kind,id){const it=find(id);cur=id;const e=kind==='ent';
- open(`<h2>${e?'Entrada':'Salida'}: ${esc(it.n)}</h2><div class="hint">Existencia actual: ${calc(it).ex}</div><div class="step"><button data-act="step" data-d="-1">−</button><input id="qty" inputmode="numeric" value="1" data-focus="1"><button data-act="step" data-d="1">+</button></div><button class="pri" style="width:100%" data-act="okmov" data-kind="${kind}">Confirmar ${e?'entrada':'salida'}</button>`)}
-function edit(id){const it=find(id);cur=id;armed='';
- open(`<h2>Editar artículo</h2><div class="f"><span>Mercancía</span><input id="e_n" value="${esc(it.n)}"></div><div class="row"><div class="f"><span>Inicio</span><input id="e_i" inputmode="numeric" value="${it.i}"></div><div class="f"><span>Precio</span><input id="e_p" inputmode="decimal" value="${it.p}"></div></div><div class="f"><span>Conteo final (vacío = automático)</span><input id="e_f" inputmode="numeric" value="${it.f==null?'':it.f}"></div><div class="row"><button class="dng" data-act="del">Quitar del inventario</button><button class="pri" data-act="okedit">Guardar</button></div>`)}
-function newItem(){open(`<h2>Añadir artículo</h2><div class="f"><span>Mercancía</span><input id="n_n" placeholder="Ej: Saya 4-12" data-focus="1"></div><div class="row"><div class="f"><span>Cantidad inicial</span><input id="n_i" inputmode="numeric" value="0"></div><div class="f"><span>Precio</span><input id="n_p" inputmode="decimal" value="0"></div></div><button class="pri" style="width:100%" data-act="oknew">Añadir al inventario</button>`)}
-function menu(){armed='';const c=S.c;
- open(`<h2>Cierre del día</h2><div class="row"><div class="f"><span>Transferencias</span><input data-k="transf" value="${esc(c.transf)}"></div><div class="f"><span>Efectivo</span><input data-k="efec" value="${esc(c.efec)}"></div></div><div class="f"><span>USD</span><input data-k="usd" value="${esc(c.usd||'')}"></div><div class="row"><div class="f"><span>Trabajador 1</span><input data-k="t1" value="${esc(c.t1||'')}"></div><div class="f"><span>Trabajador 2</span><input data-k="t2" value="${esc(c.t2||'')}"></div></div><div class="row"><div class="f"><span>Trabajador 3</span><input data-k="t3" value="${esc(c.t3||'')}"></div><div class="f"><span>Trabajador 4</span><input data-k="t4" value="${esc(c.t4||'')}"></div></div><div class="hint">«Cerrar día» deja el conteo final como inicio del día siguiente y pone entradas y salidas en 0.</div><div class="row"><button class="sec" data-act="import">Importar Excel</button><button class="dng" data-act="closeday">Cerrar día</button></div>`)}
-document.addEventListener('click',e=>{
- if(e.target===ov){close();return}
- const b=e.target.closest('[data-act]');if(!b)return;const a=b.dataset.act,id=b.dataset.id;
- if(a==='ent'||a==='sal')mov(a,id);
- else if(a==='edit')edit(id);
- else if(a==='new')newItem();
- else if(a==='menu')menu();
- else if(a==='export')exportXlsx();
- else if(a==='import')$('#file').click();
- else if(a==='step'){const q=$('#qty');q.value=Math.max(1,num(q.value)+num(b.dataset.d))}
- else if(a==='okmov'){const it=find(cur);let q=Math.floor(num($('#qty').value));if(q<1){toast('Pon una cantidad válida');return}
-  if(b.dataset.kind==='ent'){it.e+=q;toast(`Entrada de ${q} · ${it.n}`)}
-  else{const ex=calc(it).ex;if(q>ex){toast(`Solo hay ${ex} en existencia`);return}it.s+=q;toast(`Salida de ${q} · ${it.n}`)}
-  save();render();close()}
- else if(a==='okedit'){const it=find(cur),n=$('#e_n').value.trim();if(!n){toast('Escribe el nombre');return}
-  it.n=n;it.i=Math.floor(num($('#e_i').value));it.p=num($('#e_p').value);const f=$('#e_f').value.trim();it.f=f===''?null:Math.floor(num(f));save();render();close()}
- else if(a==='del'){if(armed!==cur){armed=cur;b.textContent='¿Seguro? Toca de nuevo';return}
-  S.items=S.items.filter(x=>x.id!==cur);save();render();close();toast('Artículo quitado')}
- else if(a==='oknew'){const n=$('#n_n').value.trim();if(!n){toast('Escribe el nombre');return}
-  S.items.push(mk(n,Math.floor(num($('#n_i').value)),num($('#n_p').value)));save();render();close();toast('Artículo añadido')}
- else if(a==='closeday'){if(armed!=='day'){armed='day';b.textContent='¿Seguro? Toca de nuevo';return}
-  S.items.forEach(it=>{it.i=calc(it).fin;it.e=0;it.s=0;it.f=null});S.c={transf:'',efec:'',usd:'',t1:'',t2:'',t3:'',t4:''};
-  const d=new Date();S.semana=wk(d);S.dia=d.getDate();S.mes=d.getMonth()+1;save();render();close();toast('Día cerrado')}
-});
-document.addEventListener('input',e=>{const t=e.target;
- if(t.id==='q')render();
- else if(t.dataset.h){S[t.dataset.h]=t.value;save()}
- else if(t.dataset.k){S.c[t.dataset.k]=t.value;save()}
-});
-async function exportXlsx(){
- if(typeof ExcelJS==='undefined'){toast('No se pudo cargar el generador de Excel');return}
- let dl=null;try{dl=await claude.use('downloads')}catch(e){}
- if(!dl){toast('Guardar archivos no está disponible aquí');return}
- const wb=new ExcelJS.Workbook(),ws=wb.addWorksheet('Inventario');
- [24,9,9,9,11,9,9,9,11].forEach((w,i)=>ws.getColumn(i+1).width=w);
- const T={style:'thin'},BD={top:T,left:T,bottom:T,right:T};
- const box=(r,a,b)=>{for(let c=a;c<=b;c++)ws.getCell(r,c).border=BD};
- ws.mergeCells('A1:I1');ws.getCell('A1').value='CHAMAKITO';ws.getCell('A1').font={bold:true,size:14};ws.getCell('A1').alignment={horizontal:'center'};
- ws.getRow(2).values=['Semana:',S.semana,'Día:',S.dia,'Mes:',S.mes];
- ws.getRow(3).values=['Mercancía','Inicio','Entrada','Salida','Existencia','Final','Venta','Precio','Importe'];
- for(let c=1;c<=9;c++){const x=ws.getCell(3,c);x.font={bold:true};x.alignment={horizontal:'center'};x.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFE8E6DF'}}}
- box(3,1,9);
- let total=0;
- S.items.forEach((it,k)=>{const r=k+4,c=calc(it);total+=c.imp;
-  ws.getRow(r).values=[it.n,it.i,it.e,it.s,{formula:`B${r}+C${r}-D${r}`,result:c.ex},c.fin,{formula:`E${r}-F${r}`,result:c.ven},it.p,{formula:`G${r}*H${r}`,result:c.imp}];box(r,1,9)});
- const last=S.items.length+3,tr=last+2;
- ws.getCell(tr,8).value='Total:';ws.getCell(tr,8).font={bold:true};ws.getCell(tr,9).value={formula:`SUM(I4:I${last})`,result:total};ws.getCell(tr,9).font={bold:true};box(tr,8,9);
- [['Transferencias:',S.c.transf],['Efectivo:',S.c.efec],['USD:',S.c.usd],['Trabajador 1:',S.c.t1],['Trabajador 2:',S.c.t2],['Trabajador 3:',S.c.t3],['Trabajador 4:',S.c.t4]].forEach((p,k)=>{const r=tr+k;ws.getCell(r,1).value=p[0];ws.getCell(r,1).font={bold:true};ws.mergeCells(r,2,r,4);ws.getCell(r,2).value=p[1]||'';ws.getCell(r,2).alignment={horizontal:'left'};box(r,1,4)});
- const out=await wb.xlsx.writeBuffer();
- const p=n=>String(n).padStart(2,'0'),y=new Date().getFullYear();
- try{await dl.save({filename:`Chamakito_${y}-${p(S.mes)}-${p(S.dia)}.xlsx`,data:new Blob([out],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'})});toast('Listo. Ahora súbelo a tu carpeta de Drive')}
- catch(e){if(!e||e.code!=='declined')toast('No se pudo guardar el archivo')}
-}
-$('#file').addEventListener('change',ev=>{
- const f=ev.target.files[0];if(!f)return;const r=new FileReader();
- r.onload=()=>{try{
-  const wb=XLSX.read(r.result,{type:'array'}),a=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:''});
-  const norm=s=>String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
-  const hi=a.findIndex(row=>row.some(c=>norm(c).startsWith('mercanc')));if(hi<0)throw 0;
-  const H=a[hi].map(norm),ci=k=>H.findIndex(h=>h.startsWith(k)),cn=ci('mercanc'),cI=ci('inicio'),cF=ci('final'),cP=ci('precio');
-  const items=[];
-  for(let k=hi+1;k<a.length;k++){const row=a[k],n=String(row[cn]).trim();if(!n)continue;if(/^(total|transfer)/.test(norm(n)))break;
-   const fin=cF>=0&&row[cF]!==''?num(row[cF]):null,ini=cI>=0?num(row[cI]):0;items.push(mk(n,Math.floor(fin!=null?fin:ini),cP>=0?num(row[cP]):0))}
-  if(!items.length)throw 0;S.items=items;save();render();close();toast(`${items.length} artículos importados`)
- }catch(e){toast('No reconozco el formato del Excel')}};
- r.readAsArrayBuffer(f);ev.target.value='';
-});
-// Registrar Service Worker para PWA
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js')
-      .then(reg => console.log('SW registrado', reg))
-      .catch(err => console.log('Error SW', err));
-  });
-}
-render();
-</script>
-</body></html>
+<div class="brand"><img class="logo" alt="Logo" src="data:image/jpeg;base64,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
