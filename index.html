@@ -1,9 +1,14 @@
 <!doctype html>
-<html lang="es"><head><meta charset="utf-8">
+<html lang="es">
+<head>
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Inventario de tienda</title>
+<meta name="theme-color" content="#1f6f5c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="apple-touch-icon" href="icon-192.png">
 <link rel="manifest" href="manifest.json">
-</head>
 <style>
 :root{--bg:#f6f5f2;--card:#fff;--tx:#1d1d1b;--mut:#6b6a66;--bd:#e3e1db;--ac:#1f6f5c;--on:#fff;--in:#1f7a46;--out:#b3402f;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#171716;--card:#222220;--tx:#f0efea;--mut:#a3a29c;--bd:#34332f;--ac:#3fae93;--on:#06231c;--in:#5cc58a;--out:#ee8b78;color-scheme:dark}}
@@ -55,7 +60,8 @@ button{font:inherit;cursor:pointer}
 #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(86px + env(safe-area-inset-bottom,0px));background:var(--tx);color:var(--bg);padding:9px 14px;border-radius:20px;font-size:14px;z-index:30;display:none;max-width:90%;text-align:center}
 .empty{text-align:center;color:var(--mut);padding:30px 0}
 textarea{font-size:13px;resize:none}
-</style></head>
+</style>
+</head>
 <body>
 <header>
 <div class="brand"><img class="logo" alt="Logo" src="icon-192.png"><input id="shop" data-h="tienda" placeholder="Nombre de la tienda"></div>
@@ -196,14 +202,16 @@ async function exportXlsx(){
  });
  const out=await wb.xlsx.writeBuffer(),p=n=>String(n).padStart(2,'0'),y=new Date().getFullYear();
  const filename = `${safe(S.tienda,'Inventario')}_${y}-${p(S.mes)}-${p(S.dia)}.xlsx`;
- const file = new File([out], filename, { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+ 
+ const blob = new Blob([out], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+ const file = new File([blob], filename, { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
 
  if (navigator.canShare && navigator.canShare({ files: [file] })) {
      try {
          await navigator.share({ files: [file], title: 'Inventario' });
      } catch (e) { console.log('Compartir cancelado'); }
  } else {
-     const url = window.URL.createObjectURL(out);
+     const url = window.URL.createObjectURL(blob);
      const a = document.createElement('a');
      a.style.display = 'none'; a.href = url; a.download = filename;
      document.body.appendChild(a); a.click(); window.URL.revokeObjectURL(url);
@@ -241,4 +249,5 @@ if ('serviceWorker' in navigator) {
 }
 render();
 </script>
-</body></html>
+</body>
+</html>
